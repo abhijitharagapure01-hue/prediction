@@ -1,0 +1,45 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".indexOn": ["email", "phone"],
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "matches": {
+      ".indexOn": ["status", "startTime"],
+      ".read": true,
+      ".write": true
+    },
+    "contests": {
+      ".indexOn": ["userId", "matchId", "userId_matchId"],
+      ".read": true,
+      ".write": true
+    },
+    "transactions": {
+      ".indexOn": ["userId"],
+      ".read": true,
+      ".write": true
+    },
+    "withdrawals": {
+      ".indexOn": ["userId"],
+      ".read": true,
+      ".write": true
+    },
+    "pendingDeposits": {
+      ".read": true,
+      ".write": true
+    },
+    "adminWallet": {
+      ".read": true,
+      ".write": true
+    },
+    "adminTransactions": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
