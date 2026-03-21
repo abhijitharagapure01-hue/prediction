@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { db } = require('../config/firebase');
 const { auth } = require('../middleware/auth');
 
-const UPI_ID = '8904197740@ybl';
+const UPI_ID = '8904197740@axl';
 const UPI_NAME = 'CricketWin';
 
 // Generate UPI payment link
