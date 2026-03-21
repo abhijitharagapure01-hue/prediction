@@ -29,7 +29,13 @@ router.post('/matches', async (req, res) => {
     if (!teamA || !teamB || !startTime)
       return res.status(400).json({ message: 'teamA, teamB, startTime required' });
 
-    const startMs = new Date(startTime).getTime();
+    // datetime-local gives "YYYY-MM-DDTHH:mm" without timezone — treat as IST (UTC+5:30)
+    const toIST = (val) => {
+      if (!val) return null;
+      const s = val.includes('+') || val.endsWith('Z') ? val : val + '+05:30';
+      return new Date(s).getTime();
+    };
+    const startMs = toIST(startTime);
     console.log('[admin/matches POST] startMs:', startMs, 'valid:', !isNaN(startMs));
 
     if (!startMs || isNaN(startMs))
@@ -41,7 +47,7 @@ router.post('/matches', async (req, res) => {
       teamAOdds: Number(req.body.teamAOdds) || 1.9,
       teamBOdds: Number(req.body.teamBOdds) || 1.9,
       startTime: startMs,
-      endTime: endTime ? new Date(endTime).getTime() : null,
+      endTime: toIST(endTime),
       status: 'UPCOMING',  // always start as UPCOMING — cron will lock at startTime
       winningTeam: null,
       entryFee: Number(entryFee),
