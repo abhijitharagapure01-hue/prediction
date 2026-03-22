@@ -58,9 +58,11 @@ router.post('/create-order', auth, async (req, res) => {
 // User submits UTR after paying
 router.post('/confirm-payment', auth, async (req, res) => {
   try {
-    const { txnRef, utrNumber } = req.body;
+    const { txnRef, utrNumber, screenshot } = req.body;
     if (!txnRef || !utrNumber)
       return res.status(400).json({ message: 'txnRef and utrNumber required' });
+    if (!screenshot)
+      return res.status(400).json({ message: 'Payment screenshot is required' });
 
     // Basic UTR format validation — must be 12 digits (standard UPI UTR format)
     const utrClean = utrNumber.trim();
@@ -79,7 +81,8 @@ router.post('/confirm-payment', auth, async (req, res) => {
 
     await db.ref(`pendingDeposits/${txnRef}`).update({
       status: 'AWAITING_APPROVAL',
-      utrNumber,
+      utrNumber: utrClean,
+      screenshot,
       submittedAt: Date.now(),
     });
 

@@ -47,15 +47,33 @@ export default function Dashboard() {
   };
 
 
+  const [screenshot, setScreenshot] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState('');
+
+  const handleScreenshotChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return setDepositError('Screenshot must be under 2MB');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setScreenshot(ev.target.result); // base64
+      setScreenshotPreview(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleConfirmPayment = async () => {
     if (!utrNumber.trim()) return setDepositError('Enter UTR/Transaction ID');
+    if (!screenshot) return setDepositError('Screenshot of payment is required');
     setDepositError('');
     try {
-      await api.post('/wallet/confirm-payment', { txnRef: upiData.txnRef, utrNumber });
+      await api.post('/wallet/confirm-payment', { txnRef: upiData.txnRef, utrNumber, screenshot });
       setDepositStep('done');
       setDepositMsg('Payment submitted! Admin will verify and credit your wallet shortly.');
       setDepositAmount('');
       setUtrNumber('');
+      setScreenshot(null);
+      setScreenshotPreview('');
     } catch (err) {
       setDepositError(err.response?.data?.message || 'Failed');
     }
@@ -159,6 +177,24 @@ export default function Dashboard() {
               maxLength={12}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500 font-mono tracking-widest" />
             <p className="text-xs text-gray-500">Find UTR in: PhonePe → History → Transaction Details → UTR No.</p>
+
+            {/* Screenshot upload */}
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Payment Screenshot <span className="text-red-400">*</span></label>
+              <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-600 rounded-xl cursor-pointer hover:border-green-500 transition-colors bg-gray-800">
+                {screenshotPreview ? (
+                  <img src={screenshotPreview} alt="screenshot" className="h-full w-full object-contain rounded-xl p-1" />
+                ) : (
+                  <div className="text-center">
+                    <p className="text-2xl">📷</p>
+                    <p className="text-xs text-gray-400 mt-1">Tap to upload screenshot</p>
+                    <p className="text-xs text-gray-600">Max 2MB</p>
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handleScreenshotChange} />
+              </label>
+            </div>
+
             {depositError && <p className="text-red-400 text-xs">{depositError}</p>}
             <div className="flex gap-2">
               <button onClick={handleConfirmPayment}

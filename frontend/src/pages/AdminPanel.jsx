@@ -234,6 +234,11 @@ export default function AdminPanel() {
                   <p className="text-green-400 font-bold">₹{d.amount}</p>
                   <p className="text-xs text-gray-400">UTR: <span className="text-white font-mono">{d.utrNumber || 'Not provided'}</span></p>
                   <p className="text-xs text-gray-500">{new Date(d.createdAt).toLocaleString()}</p>
+                  {d.screenshot && (
+                    <a href={d.screenshot} target="_blank" rel="noreferrer">
+                      <img src={d.screenshot} alt="payment proof" className="mt-2 h-24 rounded-lg border border-gray-600 object-contain cursor-pointer hover:opacity-80" />
+                    </a>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${
