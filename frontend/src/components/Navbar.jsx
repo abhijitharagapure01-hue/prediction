@@ -20,6 +20,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/dashboard" className="hover:text-green-400 transition-colors">Dashboard</Link>
+              <Link to="/help" className="hover:text-yellow-400 transition-colors">Help</Link>
               {user.isAdmin && (
                 <Link to="/admin" className="hover:text-yellow-400 transition-colors">Admin</Link>
               )}

@@ -11,6 +11,8 @@ export default function AdminPanel() {
   const [deposits, setDeposits] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
   const [adminWallet, setAdminWallet] = useState({ balance: 0, transactions: [] });
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [replyInputs, setReplyInputs] = useState({});
   const [tab, setTab] = useState('wallet');
   const [form, setForm] = useState(emptyMatch);
   const [resultInputs, setResultInputs] = useState({});
@@ -18,7 +20,7 @@ export default function AdminPanel() {
   const [msgType, setMsgType] = useState('success'); // 'success' | 'error'
 
   const fetchAll = async () => {
-    const [m, u, t, c, w, d, wd] = await Promise.all([
+    const [m, u, t, c, w, d, wd, st] = await Promise.all([
       api.get('/matches'),
       api.get('/admin/users'),
       api.get('/admin/transactions'),
@@ -26,6 +28,7 @@ export default function AdminPanel() {
       api.get('/admin/wallet'),
       api.get('/admin/deposits'),
       api.get('/admin/withdrawals'),
+      api.get('/support/tickets'),
     ]);
     setMatches(m.data);
     setUsers(u.data);
@@ -34,6 +37,7 @@ export default function AdminPanel() {
     setAdminWallet(w.data);
     setDeposits(d.data);
     setWithdrawals(wd.data);
+    setSupportTickets(st.data);
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -143,8 +147,9 @@ export default function AdminPanel() {
   const pendingPayouts = contests.filter((c) => c.pendingPayout);
   const pendingDeposits = deposits.filter((d) => d.status === 'AWAITING_APPROVAL');
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'PENDING');
+  const openTickets = supportTickets.filter((t) => t.status === 'OPEN');
 
-  const TABS = ['wallet', 'deposits', 'withdrawals', 'matches', 'add-match', 'contests', 'users', 'transactions'];
+  const TABS = ['wallet', 'deposits', 'withdrawals', 'matches', 'add-match', 'contests', 'users', 'transactions', 'support'];
 
   return (
     <div>
@@ -176,6 +181,9 @@ export default function AdminPanel() {
             )}
             {t === 'withdrawals' && pendingWithdrawals.length > 0 && (
               <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{pendingWithdrawals.length}</span>
+            )}
+            {t === 'support' && openTickets.length > 0 && (
+              <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{openTickets.length}</span>
             )}
           </button>
         ))}
@@ -486,6 +494,61 @@ export default function AdminPanel() {
               <p className={`font-bold ${t.type === 'ENTRY_FEE' ? 'text-red-400' : 'text-green-400'}`}>
                 {t.type === 'ENTRY_FEE' ? '-' : '+'}₹{t.amount}
               </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Support Tickets */}
+      {tab === 'support' && (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-400">User support tickets. Reply to resolve issues.</p>
+          {supportTickets.length === 0 ? (
+            <p className="text-gray-500">No support tickets yet.</p>
+          ) : supportTickets.map((t) => (
+            <div key={t.id} className={`border rounded-xl p-4 space-y-2 ${
+              t.status === 'OPEN' ? 'border-yellow-700 bg-yellow-900/10' :
+              t.status === 'RESOLVED' ? 'border-green-800 bg-green-900/10' :
+              'border-gray-700 bg-gray-900'
+            }`}>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <p className="font-semibold">{t.subject}</p>
+                  <p className="text-xs text-gray-400">{t.userName} ({t.userEmail})</p>
+                  <p className="text-xs text-gray-600">{new Date(t.createdAt).toLocaleString()}</p>
+                </div>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                  t.status === 'OPEN' ? 'bg-yellow-900 text-yellow-300' :
+                  t.status === 'RESOLVED' ? 'bg-green-900 text-green-300' :
+                  'bg-gray-700 text-gray-400'
+                }`}>{t.status}</span>
+              </div>
+              <p className="text-sm text-gray-300 bg-gray-800 rounded-lg p-3">{t.message}</p>
+              {t.adminReply && (
+                <p className="text-xs text-green-400 bg-green-900/20 rounded-lg p-2">Your reply: {t.adminReply}</p>
+              )}
+              {t.status === 'OPEN' && (
+                <div className="flex gap-2 mt-2">
+                  <input type="text" placeholder="Type your reply..."
+                    value={replyInputs[t.id] || ''}
+                    onChange={(e) => setReplyInputs({ ...replyInputs, [t.id]: e.target.value })}
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500" />
+                  <button onClick={async () => {
+                    if (!replyInputs[t.id]?.trim()) return;
+                    await api.post(`/support/tickets/${t.id}/reply`, { reply: replyInputs[t.id] });
+                    setReplyInputs({ ...replyInputs, [t.id]: '' });
+                    fetchAll();
+                  }} className="bg-yellow-600 hover:bg-yellow-500 px-3 py-2 rounded-lg text-sm transition-colors">
+                    Reply
+                  </button>
+                  <button onClick={async () => {
+                    await api.post(`/support/tickets/${t.id}/close`);
+                    fetchAll();
+                  }} className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-colors">
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

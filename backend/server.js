@@ -15,6 +15,7 @@ app.use('/api/matches', require('./routes/matches'));
 app.use('/api/contests', require('./routes/contests'));
 app.use('/api/wallet', require('./routes/wallet'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/support', require('./routes/support'));
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }));
 
