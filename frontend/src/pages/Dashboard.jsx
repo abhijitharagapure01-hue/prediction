@@ -116,32 +116,37 @@ export default function Dashboard() {
 
         {depositStep === 'upi' && upiData && (
           <div className="mt-4 space-y-3">
-            <p className="text-sm text-gray-300 font-medium">Send exactly <span className="text-green-400 font-bold">₹{upiData.amount}</span> to this UPI ID:</p>
-            <div className="bg-gray-800 border border-green-700 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-white tracking-widest">{upiData.upiId}</p>
-              <button
-                onClick={() => { navigator.clipboard.writeText(upiData.upiId); }}
-                className="mt-2 text-xs text-green-400 hover:text-green-300 underline">
-                📋 Copy UPI ID
-              </button>
+            <div className="bg-gray-800 rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Pay to</p>
+                <p className="font-mono font-bold text-white">{upiData.upiId}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Amount</p>
+                <p className="text-green-400 font-bold text-lg">₹{upiData.amount}</p>
+              </div>
             </div>
-            <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 text-xs text-yellow-300 space-y-1">
-              <p>1. Open PhonePe / GPay / Paytm / any UPI app</p>
-              <p>2. Go to "Send Money" → "Pay by UPI ID"</p>
-              <p>3. Enter the UPI ID above and amount <strong>₹{upiData.amount}</strong></p>
-              <p>4. Complete payment and note the UTR/Transaction ID</p>
-              <p>5. Come back here and click "I've Paid"</p>
+            <p className="text-xs text-gray-400 text-center">Choose your UPI app to pay</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: 'phonepe', label: '📱 PhonePe', color: 'bg-purple-700 hover:bg-purple-600', url: `phonepe://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit` },
+                { key: 'gpay',    label: '🔵 Google Pay', color: 'bg-blue-700 hover:bg-blue-600',  url: `tez://upi/pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit` },
+                { key: 'paytm',   label: '🔷 Paytm',     color: 'bg-sky-700 hover:bg-sky-600',    url: `paytmmp://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit` },
+                { key: 'bhim',    label: '🇮🇳 BHIM',      color: 'bg-orange-700 hover:bg-orange-600', url: `upi://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit` },
+              ].map(({ key, label, color, url }) => (
+                <button key={key}
+                  onClick={() => { window.location.href = url; setTimeout(() => setDepositStep('utr'), 2500); }}
+                  className={`${color} py-3 rounded-xl text-sm font-semibold transition-colors`}>
+                  {label}
+                </button>
+              ))}
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setDepositStep('utr')}
-                className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-1">
-                ✅ I've Paid — Enter UTR
-              </button>
-              <button onClick={() => setDepositStep('input')}
-                className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-colors">
-                Cancel
-              </button>
-            </div>
+            <button onClick={() => setDepositStep('utr')}
+              className="w-full text-xs text-gray-400 hover:text-white underline text-center">
+              Already paid? Enter UTR →
+            </button>
+            <button onClick={() => setDepositStep('input')}
+              className="w-full text-xs text-gray-600 hover:text-white text-center">Cancel</button>
           </div>
         )}
 
