@@ -110,6 +110,7 @@ export default function Dashboard() {
                 Add Money
               </button>
             </div>
+            <p className="text-xs text-gray-500 mt-1">Max ₹1,000 per day per user</p>
             {depositError && <p className="text-red-400 text-xs mt-2">{depositError}</p>}
           </div>
         )}

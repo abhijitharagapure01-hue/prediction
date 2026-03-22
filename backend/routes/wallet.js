@@ -3,7 +3,9 @@ const { db } = require('../config/firebase');
 const { auth } = require('../middleware/auth');
 
 const UPI_ID = '8904197740@axl';
-const UPI_NAME = 'CricketWin';
+const UPI_NAME = 'predictioncrick';
+
+const DAILY_DEPOSIT_LIMIT = 1000;
 
 // Generate UPI payment link
 router.post('/create-order', auth, async (req, res) => {
@@ -13,6 +15,28 @@ router.post('/create-order', auth, async (req, res) => {
       return res.status(400).json({ message: 'Minimum deposit is ₹10' });
 
     const amt = Number(amount);
+
+    // Check daily deposit limit
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
+
+    const txSnap = await db.ref('transactions')
+      .orderByChild('userId').equalTo(req.user.id).get();
+
+    let todayDeposited = 0;
+    if (txSnap.exists()) {
+      Object.values(txSnap.val()).forEach((t) => {
+        if (t.type === 'DEPOSIT' && t.createdAt >= todayStartMs) {
+          todayDeposited += t.amount;
+        }
+      });
+    }
+
+    if (todayDeposited + amt > DAILY_DEPOSIT_LIMIT)
+      return res.status(400).json({
+        message: `Daily deposit limit is ₹${DAILY_DEPOSIT_LIMIT}. You have deposited ₹${todayDeposited} today. You can deposit up to ₹${DAILY_DEPOSIT_LIMIT - todayDeposited} more.`
+      });
     const txnRef = `CW${req.user.id.slice(-6).toUpperCase()}${Date.now()}`;
 
     const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amt}&cu=INR&tn=${encodeURIComponent('CricketWin Wallet')}&tr=${txnRef}`;
