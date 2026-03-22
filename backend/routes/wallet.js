@@ -62,6 +62,11 @@ router.post('/confirm-payment', auth, async (req, res) => {
     if (!txnRef || !utrNumber)
       return res.status(400).json({ message: 'txnRef and utrNumber required' });
 
+    // Basic UTR format validation — must be 12 digits (standard UPI UTR format)
+    const utrClean = utrNumber.trim();
+    if (!/^\d{12}$/.test(utrClean))
+      return res.status(400).json({ message: 'Invalid UTR number. UTR must be exactly 12 digits (found in your UPI app payment receipt).' });
+
     const pendingSnap = await db.ref(`pendingDeposits/${txnRef}`).get();
     if (!pendingSnap.exists())
       return res.status(404).json({ message: 'Transaction not found' });

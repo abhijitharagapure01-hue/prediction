@@ -153,10 +153,12 @@ export default function Dashboard() {
 
         {depositStep === 'utr' && (
           <div className="mt-4 space-y-3">
-            <p className="text-sm text-gray-300">Enter the UTR / Transaction ID from your UPI app</p>
-            <input type="text" placeholder="e.g. 425123456789" value={utrNumber}
-              onChange={(e) => setUtrNumber(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
+            <p className="text-sm text-gray-300">Enter the 12-digit UTR from your UPI app payment receipt</p>
+            <input type="text" placeholder="e.g. 425123456789 (12 digits)" value={utrNumber}
+              onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+              maxLength={12}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500 font-mono tracking-widest" />
+            <p className="text-xs text-gray-500">Find UTR in: PhonePe → History → Transaction Details → UTR No.</p>
             {depositError && <p className="text-red-400 text-xs">{depositError}</p>}
             <div className="flex gap-2">
               <button onClick={handleConfirmPayment}
