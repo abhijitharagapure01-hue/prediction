@@ -46,16 +46,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleUPIOpen = (app) => {
-    const links = {
-      phonepe: upiData.upiLink.replace('upi://', 'phonepe://'),
-      gpay: `tez://upi/pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR`,
-      paytm: `paytmmp://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR`,
-      generic: upiData.upiLink,
-    };
-    window.location.href = links[app] || links.generic;
-    setTimeout(() => setDepositStep('utr'), 2000);
-  };
 
   const handleConfirmPayment = async () => {
     if (!utrNumber.trim()) return setDepositError('Enter UTR/Transaction ID');
@@ -126,24 +116,32 @@ export default function Dashboard() {
 
         {depositStep === 'upi' && upiData && (
           <div className="mt-4 space-y-3">
-            <p className="text-sm text-gray-300">Pay <span className="text-green-400 font-bold">₹{upiData.amount}</span> to <span className="text-white font-mono">{upiData.upiId}</span></p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { key: 'phonepe', label: '📱 PhonePe', color: 'bg-purple-700 hover:bg-purple-600' },
-                { key: 'gpay', label: '🔵 Google Pay', color: 'bg-blue-700 hover:bg-blue-600' },
-                { key: 'paytm', label: '🔷 Paytm', color: 'bg-sky-700 hover:bg-sky-600' },
-                { key: 'generic', label: '💳 Any UPI App', color: 'bg-gray-700 hover:bg-gray-600' },
-              ].map(({ key, label, color }) => (
-                <button key={key} onClick={() => handleUPIOpen(key)}
-                  className={`${color} py-2 rounded-lg text-sm font-medium transition-colors`}>
-                  {label}
-                </button>
-              ))}
+            <p className="text-sm text-gray-300 font-medium">Send exactly <span className="text-green-400 font-bold">₹{upiData.amount}</span> to this UPI ID:</p>
+            <div className="bg-gray-800 border border-green-700 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-white tracking-widest">{upiData.upiId}</p>
+              <button
+                onClick={() => { navigator.clipboard.writeText(upiData.upiId); }}
+                className="mt-2 text-xs text-green-400 hover:text-green-300 underline">
+                📋 Copy UPI ID
+              </button>
             </div>
-            <button onClick={() => setDepositStep('utr')} className="text-xs text-gray-400 hover:text-white underline">
-              Already paid? Enter UTR →
-            </button>
-            <button onClick={() => setDepositStep('input')} className="text-xs text-gray-500 hover:text-white block">Cancel</button>
+            <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 text-xs text-yellow-300 space-y-1">
+              <p>1. Open PhonePe / GPay / Paytm / any UPI app</p>
+              <p>2. Go to "Send Money" → "Pay by UPI ID"</p>
+              <p>3. Enter the UPI ID above and amount <strong>₹{upiData.amount}</strong></p>
+              <p>4. Complete payment and note the UTR/Transaction ID</p>
+              <p>5. Come back here and click "I've Paid"</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setDepositStep('utr')}
+                className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-1">
+                ✅ I've Paid — Enter UTR
+              </button>
+              <button onClick={() => setDepositStep('input')}
+                className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-colors">
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 
