@@ -15,7 +15,7 @@
       ".write": true
     },
     "contests": {
-      ".indexOn": ["userId", "matchId", "userId_matchId"],
+      ".indexOn": ["userId", "matchId", "userId_matchId", "userId_matchId_amount"],
       ".read": true,
       ".write": true
     },

@@ -105,7 +105,7 @@ export default function Dashboard() {
     }
   };
 
-  const statusColor = { WON: 'text-green-400', LOST: 'text-red-400', PENDING: 'text-yellow-400' };
+  const statusColor = { WON: 'text-green-400', LOST: 'text-red-400', PENDING: 'text-yellow-400', REFUNDED: 'text-blue-400' };
   const wStatusColor = { PENDING: 'text-yellow-400', APPROVED: 'text-green-400', REJECTED: 'text-red-400' };
 
   return (

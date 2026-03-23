@@ -237,8 +237,8 @@ export default function MatchDetails() {
                 <p className="font-medium">{c.selectedTeam} — Slot #{c.slotNumber}</p>
                 <p className="text-gray-500 text-xs">₹{c.amount} entry</p>
               </div>
-              <p className={`font-bold ${c.status === 'WON' ? 'text-green-400' : c.status === 'LOST' ? 'text-red-400' : 'text-yellow-400'}`}>
-                {c.status}{c.status === 'WON' ? ` +₹${c.winnings}` : ''}
+              <p className={`font-bold ${c.status === 'WON' ? 'text-green-400' : c.status === 'LOST' ? 'text-red-400' : c.status === 'REFUNDED' ? 'text-blue-400' : 'text-yellow-400'}`}>
+                {c.status}{c.status === 'WON' ? ` +₹${c.winnings}` : c.status === 'REFUNDED' ? ` +₹${c.amount} refunded` : ''}
               </p>
             </div>
           ))}
