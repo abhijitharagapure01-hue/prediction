@@ -21,8 +21,19 @@ router.post('/register', async (req, res) => {
     if (!name || !email || !password)
       return res.status(400).json({ message: 'All fields required' });
 
+    // Check email uniqueness
     const snap = await db.ref('users').orderByChild('email').equalTo(email).get();
     if (snap.exists()) return res.status(400).json({ message: 'Email already registered' });
+
+    // Check name uniqueness (case-insensitive)
+    const allSnap = await db.ref('users').get();
+    if (allSnap.exists()) {
+      const nameTaken = Object.values(allSnap.val()).some(
+        (u) => u.name && u.name.trim().toLowerCase() === name.trim().toLowerCase()
+      );
+      if (nameTaken)
+        return res.status(400).json({ message: `Username "${name}" is already taken. Please choose a different username.` });
+    }
 
     const hashed = await bcrypt.hash(password, 10);
     const ref = db.ref('users').push();

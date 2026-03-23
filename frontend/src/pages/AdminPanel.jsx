@@ -15,6 +15,8 @@ export default function AdminPanel() {
   const [replyInputs, setReplyInputs] = useState({});
   const [tab, setTab] = useState('wallet');
   const [form, setForm] = useState(emptyMatch);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userDetailLoading, setUserDetailLoading] = useState(false);
   const [editingMatch, setEditingMatch] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [resultInputs, setResultInputs] = useState({});
@@ -147,6 +149,33 @@ export default function AdminPanel() {
     fetchAll();
   };
 
+  const handleOpenUser = async (userId) => {
+    setUserDetailLoading(true);
+    try {
+      const { data } = await api.get(`/admin/users/${userId}`);
+      setSelectedUser(data);
+    } catch (err) {
+      setMessage('Failed to load user details');
+    } finally {
+      setUserDetailLoading(false);
+    }
+  };
+
+  const handleClearUserWallet = async (userId) => {
+    if (!confirm('Clear this user\'s wallet to ₹0?')) return;
+    const { data } = await api.post(`/admin/users/${userId}/clear-wallet`);
+    setMessage(data.message);
+    handleOpenUser(userId);
+    fetchAll();
+  };
+
+  const handleClearAdminWallet = async () => {
+    if (!confirm('Clear admin wallet to ₹0?')) return;
+    const { data } = await api.post('/admin/wallet/clear');
+    setMessage(data.message);
+    fetchAll();
+  };
+
   const handleEditMatch = (m) => {
     const toLocal = (ms) => {
       if (!ms) return '';
@@ -265,6 +294,10 @@ export default function AdminPanel() {
             <p className="text-xs text-gray-500 mt-2">
               Collected from user bets. Winners are paid from this balance.
             </p>
+            <button onClick={handleClearAdminWallet}
+              className="mt-3 bg-red-900 hover:bg-red-800 px-4 py-2 rounded-lg text-sm transition-colors">
+              🗑 Clear Admin Wallet
+            </button>
           </div>
 
           <h3 className="font-semibold text-gray-300">Admin Transactions</h3>
@@ -604,8 +637,8 @@ export default function AdminPanel() {
             </thead>
             <tbody>
               {filteredUsers.map((u) => (
-                <tr key={u.id} className="border-b border-gray-800/50">
-                  <td className="py-2 pr-4">{u.name}</td>
+                <tr key={u.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer" onClick={() => handleOpenUser(u.id)}>
+                  <td className="py-2 pr-4 text-yellow-400 hover:underline">{u.name}</td>
                   <td className="py-2 pr-4 text-gray-400">{u.email}</td>
                   <td className="py-2 pr-4 text-green-400">₹{u.walletBalance}</td>
                   <td className="py-2">{u.isAdmin ? '✅' : '—'}</td>
@@ -686,6 +719,99 @@ export default function AdminPanel() {
               )}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+      {/* User Detail Modal */}
+      {(selectedUser || userDetailLoading) && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl my-6 p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">User Details</h2>
+              <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-white text-2xl">✕</button>
+            </div>
+
+            {userDetailLoading ? (
+              <p className="text-gray-400">Loading...</p>
+            ) : selectedUser && (
+              <>
+                {/* Basic info */}
+                <div className="bg-gray-800 rounded-xl p-4 space-y-1 text-sm">
+                  <p><span className="text-gray-400">Name:</span> <span className="text-white font-semibold">{selectedUser.name}</span></p>
+                  <p><span className="text-gray-400">Email:</span> {selectedUser.email}</p>
+                  <p><span className="text-gray-400">Wallet:</span> <span className="text-green-400 font-bold">₹{selectedUser.walletBalance}</span></p>
+                  <p><span className="text-gray-400">Joined:</span> {new Date(selectedUser.createdAt).toLocaleString()}</p>
+                  <p><span className="text-gray-400">Admin:</span> {selectedUser.isAdmin ? '✅ Yes' : 'No'}</p>
+                </div>
+
+                <button onClick={() => handleClearUserWallet(selectedUser.id)}
+                  className="bg-red-800 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition-colors">
+                  🗑 Clear Wallet to ₹0
+                </button>
+
+                {/* Contests */}
+                <div>
+                  <p className="font-semibold text-gray-300 mb-2">Contests ({selectedUser.contests?.length || 0})</p>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {(selectedUser.contests || []).map((c) => (
+                      <div key={c.id} className="bg-gray-800 rounded-lg px-3 py-2 text-xs flex justify-between">
+                        <span>{c.match?.teamA} vs {c.match?.teamB} — {c.selectedTeam} — Slot #{c.slotNumber} — ₹{c.amount}</span>
+                        <span className={c.status === 'WON' ? 'text-green-400' : c.status === 'LOST' ? 'text-red-400' : c.status === 'REFUNDED' ? 'text-blue-400' : 'text-yellow-400'}>{c.status}</span>
+                      </div>
+                    ))}
+                    {!selectedUser.contests?.length && <p className="text-gray-500 text-xs">No contests</p>}
+                  </div>
+                </div>
+
+                {/* Deposits */}
+                <div>
+                  <p className="font-semibold text-gray-300 mb-2">Deposits ({selectedUser.deposits?.length || 0})</p>
+                  <div className="space-y-1 max-h-36 overflow-y-auto">
+                    {(selectedUser.deposits || []).map((d) => (
+                      <div key={d.id} className="bg-gray-800 rounded-lg px-3 py-2 text-xs flex justify-between">
+                        <span>₹{d.amount} — UTR: {d.utrNumber || 'N/A'} — {new Date(d.createdAt).toLocaleString()}</span>
+                        <span className={d.status === 'APPROVED' ? 'text-green-400' : d.status === 'REJECTED' ? 'text-red-400' : 'text-yellow-400'}>{d.status}</span>
+                      </div>
+                    ))}
+                    {!selectedUser.deposits?.length && <p className="text-gray-500 text-xs">No deposits</p>}
+                  </div>
+                </div>
+
+                {/* Withdrawals */}
+                <div>
+                  <p className="font-semibold text-gray-300 mb-2">Withdrawals ({selectedUser.withdrawals?.length || 0})</p>
+                  <div className="space-y-1 max-h-36 overflow-y-auto">
+                    {(selectedUser.withdrawals || []).map((w) => (
+                      <div key={w.id} className="bg-gray-800 rounded-lg px-3 py-2 text-xs flex justify-between">
+                        <span>₹{w.amount} — {w.method?.toUpperCase()} — {new Date(w.createdAt).toLocaleString()}</span>
+                        <span className={w.status === 'APPROVED' ? 'text-green-400' : w.status === 'REJECTED' ? 'text-red-400' : 'text-yellow-400'}>{w.status}</span>
+                      </div>
+                    ))}
+                    {!selectedUser.withdrawals?.length && <p className="text-gray-500 text-xs">No withdrawals</p>}
+                  </div>
+                </div>
+
+                {/* Transactions */}
+                <div>
+                  <p className="font-semibold text-gray-300 mb-2">Transactions ({selectedUser.transactions?.length || 0})</p>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {(selectedUser.transactions || []).map((t) => (
+                      <div key={t.id} className="bg-gray-800 rounded-lg px-3 py-2 text-xs flex justify-between">
+                        <span className="text-gray-300">{t.description}</span>
+                        <span className={t.type === 'ENTRY_FEE' ? 'text-red-400' : 'text-green-400'}>
+                          {t.type === 'ENTRY_FEE' ? '-' : '+'}₹{t.amount}
+                        </span>
+                      </div>
+                    ))}
+                    {!selectedUser.transactions?.length && <p className="text-gray-500 text-xs">No transactions</p>}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

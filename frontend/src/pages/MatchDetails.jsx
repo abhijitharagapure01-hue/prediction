@@ -14,12 +14,13 @@ export default function MatchDetails() {
   const [loading, setLoading] = useState(true);
 
   // UI state
-  const [activeTier, setActiveTier] = useState(null); // which tier card is expanded
-  const [selectedSlot, setSelectedSlot] = useState(null); // { slotNumber }
+  const [activeTier, setActiveTier] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [tierSearch, setTierSearch] = useState('');
 
   const fetchAll = async () => {
     const [matchRes, slotsRes] = await Promise.all([
@@ -96,8 +97,23 @@ export default function MatchDetails() {
         <div className="bg-green-900/30 border border-green-700 rounded-xl p-3 text-green-400 text-sm">{success}</div>
       )}
 
+      {/* Tier search + cards */}
+      {match.status === 'UPCOMING' && (
+        <>
+          <input
+            type="number"
+            placeholder="Search by amount (e.g. 100)"
+            value={tierSearch}
+            onChange={(e) => setTierSearch(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-yellow-500"
+          />
+        </>
+      )}
+
       {/* Tier cards */}
-      {match.status === 'UPCOMING' && tiers.map((tier) => {
+      {match.status === 'UPCOMING' && tiers
+        .filter((tier) => !tierSearch || String(tier.amount).includes(tierSearch))
+        .map((tier) => {
         const myEntry = myContests.find((c) => c.amount === tier.amount);
         const filledSlots = tier.slots.filter((s) => s.full).length;
         const isOpen = activeTier === tier.amount;

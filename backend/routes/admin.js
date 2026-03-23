@@ -159,6 +159,86 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// Get single user full details (contests, transactions, deposits, withdrawals)
+router.get('/users/:id', async (req, res) => {
+  try {
+    const uid = req.params.id;
+    const [userSnap, txSnap, contestSnap, depositSnap, withdrawSnap] = await Promise.all([
+      db.ref(`users/${uid}`).get(),
+      db.ref('transactions').orderByChild('userId').equalTo(uid).get(),
+      db.ref('contests').orderByChild('userId').equalTo(uid).get(),
+      db.ref('pendingDeposits').get(),
+      db.ref('withdrawals').orderByChild('userId').equalTo(uid).get(),
+    ]);
+    if (!userSnap.exists()) return res.status(404).json({ message: 'User not found' });
+    const { password, ...user } = userSnap.val();
+
+    const transactions = txSnap.exists()
+      ? Object.entries(txSnap.val()).map(([id, d]) => ({ id, ...d })).sort((a, b) => b.createdAt - a.createdAt)
+      : [];
+
+    const contestsRaw = contestSnap.exists()
+      ? Object.entries(contestSnap.val()).map(([id, d]) => ({ id, ...d }))
+      : [];
+    const contests = await Promise.all(contestsRaw.map(async (c) => {
+      const mSnap = await db.ref(`matches/${c.matchId}`).get();
+      return { ...c, match: mSnap.exists() ? { id: mSnap.key, ...mSnap.val() } : null };
+    }));
+    contests.sort((a, b) => b.createdAt - a.createdAt);
+
+    const deposits = depositSnap.exists()
+      ? Object.entries(depositSnap.val()).filter(([, d]) => d.userId === uid).map(([id, d]) => ({ id, ...d })).sort((a, b) => b.createdAt - a.createdAt)
+      : [];
+
+    const withdrawals = withdrawSnap.exists()
+      ? Object.entries(withdrawSnap.val()).map(([id, d]) => ({ id, ...d })).sort((a, b) => b.createdAt - a.createdAt)
+      : [];
+
+    res.json({ id: uid, ...user, transactions, contests, deposits, withdrawals });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Clear user wallet to zero
+router.post('/users/:id/clear-wallet', async (req, res) => {
+  try {
+    const uid = req.params.id;
+    const userSnap = await db.ref(`users/${uid}`).get();
+    if (!userSnap.exists()) return res.status(404).json({ message: 'User not found' });
+    const prev = userSnap.val().walletBalance || 0;
+    await db.ref(`users/${uid}`).update({ walletBalance: 0 });
+    await db.ref('transactions').push().set({
+      userId: uid,
+      type: 'ADMIN_CLEAR',
+      amount: prev,
+      description: `Wallet cleared by admin (was ₹${prev})`,
+      createdAt: Date.now(),
+    });
+    res.json({ message: `Wallet cleared. ₹${prev} removed.` });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Clear admin wallet to zero
+router.post('/wallet/clear', async (req, res) => {
+  try {
+    const snap = await db.ref('adminWallet').get();
+    const prev = snap.exists() ? snap.val().balance || 0 : 0;
+    await db.ref('adminWallet').set({ balance: 0 });
+    await db.ref('adminTransactions').push().set({
+      type: 'ADMIN_CLEAR',
+      amount: prev,
+      description: `Admin wallet manually cleared (was ₹${prev})`,
+      createdAt: Date.now(),
+    });
+    res.json({ message: `Admin wallet cleared. ₹${prev} removed.` });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Get all transactions
 router.get('/transactions', async (req, res) => {
   try {
