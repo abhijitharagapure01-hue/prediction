@@ -17,6 +17,7 @@ export default function AdminPanel() {
   const [form, setForm] = useState(emptyMatch);
   const [editingMatch, setEditingMatch] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [resultInputs, setResultInputs] = useState({});
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
   const [msgType, setMsgType] = useState('success'); // 'success' | 'error'
