@@ -79,21 +79,30 @@ router.post('/join', auth, async (req, res) => {
     if (userBalance < amount)
       return res.status(400).json({ message: 'Insufficient wallet balance' });
 
-    // Find the current open slot for this tier
+    // Find the current open slot for this tier — use provided slotNumber if given
     const tierSnap = await db.ref('contests').orderByChild('matchId').equalTo(matchId).get();
     const tierContests = tierSnap.exists()
       ? Object.entries(tierSnap.val()).map(([id, d]) => ({ id, ...d })).filter((c) => c.amount === amount)
       : [];
 
-    // Find open slot — first slot where this team side is not yet taken
     let assignedSlot = null;
-    for (let i = 1; i <= SLOTS_PER_TIER; i++) {
-      const slotContests = tierContests.filter((c) => c.slotNumber === i);
+
+    if (req.body.slotNumber) {
+      // User picked a specific slot — validate it
+      const slotNum = Number(req.body.slotNumber);
+      const slotContests = tierContests.filter((c) => c.slotNumber === slotNum);
       const teamSideTaken = slotContests.find((c) => c.selectedTeam === selectedTeam);
       const slotFull = slotContests.length >= 2;
-      if (!slotFull && !teamSideTaken) {
-        assignedSlot = i;
-        break;
+      if (slotFull) return res.status(400).json({ message: `Slot #${slotNum} is already full` });
+      if (teamSideTaken) return res.status(400).json({ message: `${selectedTeam} side is already taken in Slot #${slotNum}` });
+      assignedSlot = slotNum;
+    } else {
+      // Auto-assign: find first open slot where this team side is free
+      for (let i = 1; i <= SLOTS_PER_TIER; i++) {
+        const slotContests = tierContests.filter((c) => c.slotNumber === i);
+        const teamSideTaken = slotContests.find((c) => c.selectedTeam === selectedTeam);
+        const slotFull = slotContests.length >= 2;
+        if (!slotFull && !teamSideTaken) { assignedSlot = i; break; }
       }
     }
 
