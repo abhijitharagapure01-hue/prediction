@@ -145,21 +145,29 @@ export default function Dashboard() {
                 <p className="text-green-400 font-bold text-lg">₹{upiData.amount}</p>
               </div>
             </div>
-            <p className="text-xs text-gray-400 text-center">Choose your UPI app to pay</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { key: 'phonepe', label: '📱 PhonePe', color: 'bg-purple-700 hover:bg-purple-600', url: `phonepe://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit` },
-                { key: 'gpay',    label: '🔵 Google Pay', color: 'bg-blue-700 hover:bg-blue-600',  url: `tez://upi/pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit` },
-                { key: 'paytm',   label: '🔷 Paytm',     color: 'bg-sky-700 hover:bg-sky-600',    url: `paytmmp://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit` },
-                { key: 'bhim',    label: '🇮🇳 BHIM',      color: 'bg-orange-700 hover:bg-orange-600', url: `upi://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit` },
-              ].map(({ key, label, color, url }) => (
-                <button key={key}
-                  onClick={() => { window.location.href = url; setTimeout(() => setDepositStep('utr'), 2500); }}
-                  className={`${color} py-3 rounded-xl text-sm font-semibold transition-colors`}>
-                  {label}
-                </button>
-              ))}
+
+            {/* QR Code */}
+            <div className="flex flex-col items-center bg-gray-800 rounded-2xl p-4 space-y-2">
+              <p className="text-xs text-gray-400">Scan with any UPI app to pay</p>
+              <div className="bg-white rounded-xl p-2">
+                <img
+                  src="/qr.jpg"
+                  alt="UPI QR Code"
+                  className="w-48 h-48 object-contain"
+                />
+              </div>
+              <p className="text-xs text-gray-500">PhonePe · GPay · Paytm · BHIM · Any UPI</p>
+              <p className="text-sm font-semibold text-white">UPI: {upiData.upiId}</p>
             </div>
+
+            {/* Pay via UPI deep link (opens any UPI app) */}
+            <a
+              href={`upi://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit`}
+              onClick={() => setTimeout(() => setDepositStep('utr'), 2500)}
+              className="block w-full bg-purple-700 hover:bg-purple-600 py-3 rounded-xl text-sm font-semibold text-center transition-colors">
+              📲 Open UPI App to Pay ₹{upiData.amount}
+            </a>
+
             <button onClick={() => setDepositStep('utr')}
               className="w-full text-xs text-gray-400 hover:text-white underline text-center">
               Already paid? Enter UTR →
