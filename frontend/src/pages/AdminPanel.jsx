@@ -721,9 +721,6 @@ export default function AdminPanel() {
           ))}
         </div>
       )}
-    </div>
-  );
-}
 
       {/* User Detail Modal */}
       {(selectedUser || userDetailLoading) && (
