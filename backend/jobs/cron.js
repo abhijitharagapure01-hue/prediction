@@ -8,7 +8,7 @@ const refundIncompleteSlots = async (matchId, match) => {
   if (!snap.exists()) return;
 
   const contests = Object.entries(snap.val()).map(([id, d]) => ({ id, ...d }));
-  const SLOT_TIERS = [10, 50, 100, 500, 1000];
+  const SLOT_TIERS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000];
 
   for (const amount of SLOT_TIERS) {
     const tierContests = contests.filter((c) => c.amount === amount && c.status === 'PENDING');

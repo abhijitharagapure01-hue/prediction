@@ -3,7 +3,7 @@ const { db } = require('../config/firebase');
 const { auth } = require('../middleware/auth');
 
 // Slot tiers available per match
-const SLOT_TIERS = [10, 50, 100, 500, 1000];
+const SLOT_TIERS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000];
 const SLOTS_PER_TIER = 10; // 10 slots per tier, each slot needs 1 teamA + 1 teamB
 
 // Get slots status for a match

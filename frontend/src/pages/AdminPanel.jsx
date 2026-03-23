@@ -574,14 +574,16 @@ export default function AdminPanel() {
               <div>
                 <p className="font-medium">{c.user?.name} <span className="text-gray-500">({c.user?.email})</span></p>
                 <p className="text-gray-400 text-xs">{c.match?.teamA} vs {c.match?.teamB} — picked <span className="text-white">{c.selectedTeam}</span></p>
+                <p className="text-gray-500 text-xs">Slot #{c.slotNumber} — ₹{c.amount} tier</p>
                 <p className="text-gray-600 text-xs">{new Date(c.createdAt).toLocaleString()}</p>
               </div>
               <div className="text-right">
-                <p className={`font-bold text-xs ${c.status === 'WON' ? 'text-green-400' : c.status === 'LOST' ? 'text-red-400' : 'text-yellow-400'}`}>
+                <p className={`font-bold text-xs ${c.status === 'WON' ? 'text-green-400' : c.status === 'LOST' ? 'text-red-400' : c.status === 'REFUNDED' ? 'text-blue-400' : 'text-yellow-400'}`}>
                   {c.status}{c.pendingPayout ? ' ⏳' : ''}
                 </p>
                 <p className="text-gray-400 text-xs">Bet: ₹{c.amount}</p>
                 {c.status === 'WON' && <p className="text-green-400 text-xs">Win: ₹{c.winnings}</p>}
+                {c.status === 'REFUNDED' && <p className="text-blue-400 text-xs">Refunded: ₹{c.amount}</p>}
               </div>
             </div>
           ))}
