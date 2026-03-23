@@ -15,8 +15,9 @@ export default function AdminPanel() {
   const [replyInputs, setReplyInputs] = useState({});
   const [tab, setTab] = useState('wallet');
   const [form, setForm] = useState(emptyMatch);
-  const [editingMatch, setEditingMatch] = useState(null); // holds match id being edited
+  const [editingMatch, setEditingMatch] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
   const [msgType, setMsgType] = useState('success'); // 'success' | 'error'
 
@@ -178,6 +179,29 @@ export default function AdminPanel() {
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'PENDING');
   const openTickets = supportTickets.filter((t) => t.status === 'OPEN');
 
+  const q = search.toLowerCase();
+  const filteredMatches = matches.filter((m) =>
+    !q || m.teamA?.toLowerCase().includes(q) || m.teamB?.toLowerCase().includes(q) || m.status?.toLowerCase().includes(q)
+  );
+  const filteredUsers = users.filter((u) =>
+    !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)
+  );
+  const filteredDeposits = deposits.filter((d) =>
+    !q || d.user?.name?.toLowerCase().includes(q) || d.user?.email?.toLowerCase().includes(q) || d.utrNumber?.includes(q) || String(d.amount).includes(q) || d.status?.toLowerCase().includes(q)
+  );
+  const filteredWithdrawals = withdrawals.filter((w) =>
+    !q || w.userId?.toLowerCase().includes(q) || String(w.amount).includes(q) || w.status?.toLowerCase().includes(q) || w.upiId?.toLowerCase().includes(q)
+  );
+  const filteredContests = contests.filter((c) =>
+    !q || c.userId?.toLowerCase().includes(q) || String(c.amount).includes(q) || c.status?.toLowerCase().includes(q) || c.selectedTeam?.toLowerCase().includes(q)
+  );
+  const filteredTransactions = transactions.filter((t) =>
+    !q || t.userId?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || String(t.amount).includes(q) || t.type?.toLowerCase().includes(q)
+  );
+  const filteredTickets = supportTickets.filter((t) =>
+    !q || t.userName?.toLowerCase().includes(q) || t.userEmail?.toLowerCase().includes(q) || t.subject?.toLowerCase().includes(q) || t.message?.toLowerCase().includes(q) || t.status?.toLowerCase().includes(q)
+  );
+
   const TABS = ['wallet', 'deposits', 'withdrawals', 'matches', 'add-match', 'contests', 'users', 'transactions', 'support'];
 
   return (
@@ -197,7 +221,7 @@ export default function AdminPanel() {
 
       <div className="flex gap-2 mb-6 flex-wrap">
         {TABS.map((t) => (
-          <button key={t} onClick={() => setTab(t)}
+          <button key={t} onClick={() => { setTab(t); setSearch(''); }}
             className={`px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-colors ${
               tab === t ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
             }`}>
@@ -217,6 +241,19 @@ export default function AdminPanel() {
           </button>
         ))}
       </div>
+
+      {/* Search bar — hidden for wallet and add-match tabs */}
+      {!['wallet', 'add-match'].includes(tab) && (
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder={`Search ${tab}...`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-yellow-500"
+          />
+        </div>
+      )}
 
       {/* Admin Wallet */}
       {tab === 'wallet' && (
@@ -253,9 +290,9 @@ export default function AdminPanel() {
       {tab === 'deposits' && (
         <div className="space-y-3">
           <p className="text-sm text-gray-400">UPI deposits submitted by users. Verify payment in your PhonePe/GPay app then approve.</p>
-          {deposits.length === 0 ? (
+          {filteredDeposits.length === 0 ? (
             <p className="text-gray-500">No deposits yet.</p>
-          ) : deposits.map((d) => (
+          ) : filteredDeposits.map((d) => (
             <div key={d.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
@@ -301,7 +338,7 @@ export default function AdminPanel() {
           <p className="text-sm text-gray-400">User withdrawal requests. Send money manually then click Approve.</p>
           {withdrawals.length === 0 ? (
             <p className="text-gray-500">No withdrawal requests yet.</p>
-          ) : withdrawals.map((w) => (
+          ) : filteredWithdrawals.map((w) => (
             <div key={w.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <div className="flex items-start justify-between flex-wrap gap-3">
                 <div>
@@ -350,7 +387,7 @@ export default function AdminPanel() {
       {/* Matches */}
       {tab === 'matches' && (
         <div className="space-y-3">
-          {matches.map((m) => (
+          {filteredMatches.map((m) => (
             <div key={m.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               {editingMatch === m.id ? (
                 /* ── Edit form ── */
@@ -531,7 +568,7 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {contests.map((c) => (
+          {filteredContests.map((c) => (
             <div key={c.id} className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex justify-between text-sm">
               <div>
                 <p className="font-medium">{c.user?.name} <span className="text-gray-500">({c.user?.email})</span></p>
@@ -563,7 +600,7 @@ export default function AdminPanel() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <tr key={u.id} className="border-b border-gray-800/50">
                   <td className="py-2 pr-4">{u.name}</td>
                   <td className="py-2 pr-4 text-gray-400">{u.email}</td>
@@ -579,7 +616,7 @@ export default function AdminPanel() {
       {/* Transactions */}
       {tab === 'transactions' && (
         <div className="space-y-2">
-          {transactions.map((t) => (
+          {filteredTransactions.map((t) => (
             <div key={t.id} className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex justify-between text-sm">
               <div>
                 <p className="font-medium">{t.user?.name} <span className="text-gray-500">({t.user?.email})</span></p>
@@ -598,9 +635,9 @@ export default function AdminPanel() {
       {tab === 'support' && (
         <div className="space-y-3">
           <p className="text-sm text-gray-400">User support tickets. Reply to resolve issues.</p>
-          {supportTickets.length === 0 ? (
+          {filteredTickets.length === 0 ? (
             <p className="text-gray-500">No support tickets yet.</p>
-          ) : supportTickets.map((t) => (
+          ) : filteredTickets.map((t) => (
             <div key={t.id} className={`border rounded-xl p-4 space-y-2 ${
               t.status === 'OPEN' ? 'border-yellow-700 bg-yellow-900/10' :
               t.status === 'RESOLVED' ? 'border-green-800 bg-green-900/10' :
