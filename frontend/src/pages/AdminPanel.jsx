@@ -15,7 +15,8 @@ export default function AdminPanel() {
   const [replyInputs, setReplyInputs] = useState({});
   const [tab, setTab] = useState('wallet');
   const [form, setForm] = useState(emptyMatch);
-  const [resultInputs, setResultInputs] = useState({});
+  const [editingMatch, setEditingMatch] = useState(null); // holds match id being edited
+  const [editForm, setEditForm] = useState({});
   const [message, setMessage] = useState('');
   const [msgType, setMsgType] = useState('success'); // 'success' | 'error'
 
@@ -142,6 +143,34 @@ export default function AdminPanel() {
     if (!confirm('Delete this match?')) return;
     await api.delete(`/admin/matches/${matchId}`);
     fetchAll();
+  };
+
+  const handleEditMatch = (m) => {
+    const toLocal = (ms) => {
+      if (!ms) return '';
+      const d = new Date(ms);
+      const offset = 5.5 * 60 * 60000;
+      return new Date(d.getTime() + offset).toISOString().slice(0, 16);
+    };
+    setEditingMatch(m.id);
+    setEditForm({
+      teamA: m.teamA, teamB: m.teamB,
+      startTime: toLocal(m.startTime), endTime: toLocal(m.endTime),
+      entryFee: m.entryFee, teamAOdds: m.teamAOdds, teamBOdds: m.teamBOdds,
+    });
+  };
+
+  const handleSaveEdit = async (matchId) => {
+    try {
+      await api.put(`/admin/matches/${matchId}`, editForm);
+      setEditingMatch(null);
+      setMsgType('success');
+      setMessage('Match updated');
+      fetchAll();
+    } catch (err) {
+      setMsgType('error');
+      setMessage(err.response?.data?.message || 'Failed to update');
+    }
   };
 
   const pendingPayouts = contests.filter((c) => c.pendingPayout);
@@ -323,43 +352,104 @@ export default function AdminPanel() {
         <div className="space-y-3">
           {matches.map((m) => (
             <div key={m.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <p className="font-semibold">{m.teamA} vs {m.teamB}</p>
-                  <p className="text-xs text-gray-500">{new Date(m.startTime).toLocaleString()} — <span className={
-                    m.status === 'UPCOMING' ? 'text-blue-400' : m.status === 'LOCKED' ? 'text-yellow-400' : 'text-gray-400'
-                  }>{m.status}</span></p>
-                  {m.winningTeam && <p className="text-xs text-green-400">Winner: {m.winningTeam}</p>}
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {m.status !== 'COMPLETED' && (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Winning team"
-                        value={resultInputs[m.id] || ''}
-                        onChange={(e) => setResultInputs({ ...resultInputs, [m.id]: e.target.value })}
-                        className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1 text-sm w-36 focus:outline-none"
-                      />
-                      <button onClick={() => handleSetResult(m.id, resultInputs[m.id])}
-                        className="bg-green-700 hover:bg-green-600 px-3 py-1 rounded-lg text-sm transition-colors">
-                        Set Result
-                      </button>
+              {editingMatch === m.id ? (
+                /* ── Edit form ── */
+                <div className="space-y-3">
+                  <p className="font-semibold text-yellow-400 text-sm">Editing: {m.teamA} vs {m.teamB}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="Team A" value={editForm.teamA}
+                      onChange={(e) => setEditForm({ ...editForm, teamA: e.target.value })}
+                      className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500" />
+                    <input type="text" placeholder="Team B" value={editForm.teamB}
+                      onChange={(e) => setEditForm({ ...editForm, teamB: e.target.value })}
+                      className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">Start Time</label>
+                      <input type="datetime-local" value={editForm.startTime}
+                        onChange={(e) => setEditForm({ ...editForm, startTime: e.target.value })}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500" />
                     </div>
-                  )}
-                  {m.status === 'COMPLETED' && (
-                    <button onClick={() => handleRerunResult(m.id)}
-                      className="bg-blue-800 hover:bg-blue-700 px-3 py-1 rounded-lg text-sm transition-colors"
-                      title="Fix wrong LOST results by re-running distribution">
-                      🔄 Re-run Result
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">End Time</label>
+                      <input type="datetime-local" value={editForm.endTime}
+                        onChange={(e) => setEditForm({ ...editForm, endTime: e.target.value })}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">Entry Fee</label>
+                      <input type="number" value={editForm.entryFee}
+                        onChange={(e) => setEditForm({ ...editForm, entryFee: e.target.value })}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">{editForm.teamA || 'Team A'} Odds</label>
+                      <input type="number" step="0.1" min="1" value={editForm.teamAOdds}
+                        onChange={(e) => setEditForm({ ...editForm, teamAOdds: e.target.value })}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">{editForm.teamB || 'Team B'} Odds</label>
+                      <input type="number" step="0.1" min="1" value={editForm.teamBOdds}
+                        onChange={(e) => setEditForm({ ...editForm, teamBOdds: e.target.value })}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleSaveEdit(m.id)}
+                      className="bg-yellow-600 hover:bg-yellow-500 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                      Save Changes
                     </button>
-                  )}
-                  <button onClick={() => handleDelete(m.id)}
-                    className="bg-red-900 hover:bg-red-800 px-3 py-1 rounded-lg text-sm transition-colors">
-                    Delete
-                  </button>
+                    <button onClick={() => setEditingMatch(null)}
+                      className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm transition-colors">
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* ── Normal view ── */
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="font-semibold">{m.teamA} vs {m.teamB}</p>
+                    <p className="text-xs text-gray-500">{new Date(m.startTime).toLocaleString()} — <span className={
+                      m.status === 'UPCOMING' ? 'text-blue-400' : m.status === 'LOCKED' ? 'text-yellow-400' : 'text-gray-400'
+                    }>{m.status}</span></p>
+                    <p className="text-xs text-gray-600">Odds: {m.teamAOdds}x / {m.teamBOdds}x</p>
+                    {m.winningTeam && <p className="text-xs text-green-400">Winner: {m.winningTeam}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {m.status !== 'COMPLETED' && (
+                      <div className="flex gap-2">
+                        <input type="text" placeholder="Winning team"
+                          value={resultInputs[m.id] || ''}
+                          onChange={(e) => setResultInputs({ ...resultInputs, [m.id]: e.target.value })}
+                          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1 text-sm w-36 focus:outline-none" />
+                        <button onClick={() => handleSetResult(m.id, resultInputs[m.id])}
+                          className="bg-green-700 hover:bg-green-600 px-3 py-1 rounded-lg text-sm transition-colors">
+                          Set Result
+                        </button>
+                      </div>
+                    )}
+                    {m.status === 'COMPLETED' && (
+                      <button onClick={() => handleRerunResult(m.id)}
+                        className="bg-blue-800 hover:bg-blue-700 px-3 py-1 rounded-lg text-sm transition-colors">
+                        🔄 Re-run
+                      </button>
+                    )}
+                    <button onClick={() => handleEditMatch(m)}
+                      className="bg-yellow-700 hover:bg-yellow-600 px-3 py-1 rounded-lg text-sm transition-colors">
+                      ✏️ Edit
+                    </button>
+                    <button onClick={() => handleDelete(m.id)}
+                      className="bg-red-900 hover:bg-red-800 px-3 py-1 rounded-lg text-sm transition-colors">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

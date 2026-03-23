@@ -63,7 +63,22 @@ router.post('/matches', async (req, res) => {
 // Update match
 router.put('/matches/:id', async (req, res) => {
   try {
-    await db.ref(`matches/${req.params.id}`).update(req.body);
+    const toIST = (val) => {
+      if (!val) return null;
+      const s = val.includes('+') || val.endsWith('Z') ? val : val + '+05:30';
+      return new Date(s).getTime();
+    };
+    const { teamA, teamB, startTime, endTime, entryFee, teamAOdds, teamBOdds } = req.body;
+    const update = {};
+    if (teamA) update.teamA = teamA;
+    if (teamB) update.teamB = teamB;
+    if (startTime) update.startTime = toIST(startTime);
+    if (endTime !== undefined) update.endTime = toIST(endTime);
+    if (entryFee) update.entryFee = Number(entryFee);
+    if (teamAOdds) update.teamAOdds = Number(teamAOdds);
+    if (teamBOdds) update.teamBOdds = Number(teamBOdds);
+
+    await db.ref(`matches/${req.params.id}`).update(update);
     const snap = await db.ref(`matches/${req.params.id}`).get();
     res.json({ id: snap.key, ...snap.val() });
   } catch (err) {
