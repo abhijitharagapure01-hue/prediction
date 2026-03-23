@@ -162,7 +162,7 @@ export default function Dashboard() {
 
             {/* Pay via UPI deep link (opens any UPI app) */}
             <a
-              href={`upi://pay?pa=${upiData.upiId}&pn=CricketWin&am=${upiData.amount}&cu=INR&tn=CricketWinDeposit`}
+              href={`upi://pay?pa=${upiData.upiId}&pn=Payment&am=${upiData.amount}&cu=INR&tn=Payment`}
               onClick={() => setTimeout(() => setDepositStep('utr'), 2500)}
               className="block w-full bg-purple-700 hover:bg-purple-600 py-3 rounded-xl text-sm font-semibold text-center transition-colors">
               📲 Open UPI App to Pay ₹{upiData.amount}
