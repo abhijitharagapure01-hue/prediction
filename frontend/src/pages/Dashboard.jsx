@@ -146,18 +146,11 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* QR Code */}
-            <div className="flex flex-col items-center bg-gray-800 rounded-2xl p-4 space-y-2">
-              <p className="text-xs text-gray-400">Scan with any UPI app to pay</p>
-              <div className="bg-white rounded-xl p-2">
-                <img
-                  src="/qr.jpg"
-                  alt="UPI QR Code"
-                  className="w-48 h-48 object-contain"
-                />
-              </div>
+            {/* UPI ID display */}
+            <div className="flex flex-col items-center bg-gray-800 rounded-2xl p-4 space-y-1">
+              <p className="text-xs text-gray-400">Pay to this UPI ID</p>
+              <p className="text-lg font-mono font-bold text-white">{upiData.upiId}</p>
               <p className="text-xs text-gray-500">PhonePe · GPay · Paytm · BHIM · Any UPI</p>
-              <p className="text-sm font-semibold text-white">UPI: {upiData.upiId}</p>
             </div>
 
             {/* Pay via UPI deep link (opens any UPI app) */}
